@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech to Text with Translation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #007bff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-right: 10px;
+            color: white;
+            background-color: #28a745;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        #translation-controls {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        #translation-controls label {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        #translation-controls select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            margin-right: 15px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 40px;
+            height: 20px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: #007bff;
+        }
+
+        input:focus+.slider {
+            box-shadow: 0 0 1px #007bff;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        #playback-controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .transcription-area {
+            margin-top: 30px;
+        }
+
+        .transcription-area label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .transcription-area textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 15px;
+            font-size: 1.1em;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            resize: vertical;
+            margin-bottom: 20px;
+            background-color: white;
+        }
+
+        #translation-output {
+            display: none;
+            /* Initially hide the translation output */
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2em;
+                margin-bottom: 15px;
+            }
+
+            button {
+                padding: 10px 20px;
+                font-size: 0.9em;
+                margin-right: 5px;
+                margin-bottom: 10px;
+            }
+
+            #translation-controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            #translation-controls label,
+            #translation-controls select {
+                margin-bottom: 10px;
+            }
+
+            #playback-controls {
+                margin-top: 15px;
+            }
+
+            .transcription-area textarea {
+                font-size: 1em;
+                min-height: 80px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Speech to Text with Translation</h1>
+
+    <div style="text-align: center; margin-bottom: 20px;">
+        <button id="recordBtn" onclick="startRecording()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                    d="M12 3a9 9 0 0 0-9 9v7a1 1 0 0 0 2 0v-7a7 7 0 0 1 14 0v7a1 1 0 0 0 2 0v-7a9 9 0 0 0-9-9zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
+            </svg>
+            Record
+        </button>
+        <button id="stopBtn" onclick="stopRecording()" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 6h12v12H6V6z" />
+            </svg>
+            Stop
+        </button>
+    </div>
+
+    <div id="translation-controls">
+        <label for="targetLanguage">Translate to:</label>
+        <select id="targetLanguage" disabled>
+            <option value="">-- Select Language --</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="ja">Japanese</option>
+            <option value="ko">Korean</option>
+        </select>
+        <label class="toggle-switch">
+            <input type="checkbox" id="enableTranslation" onchange="toggleTranslationOutput()">
+            <span class="slider"></span>
+        </label>
+        <span>Enable Translation</span>
+    </div>
+
+    <div id="playback-controls">
+        <button id="playBtn" onclick="playRecording()" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                    d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v14zm10-8l-6 4V7l6 4z" />
+            </svg>
+            Play Recording
+        </button>
+    </div>
+
+    <div class="transcription-area">
+        <label for="transcription">Original Transcription:</label>
+        <textarea id="transcription" rows="5" placeholder="Transcription will appear here..." readonly></textarea>
+
+        <div id="translation-output">
+            <label for="translation">Translation:</label>
+            <textarea id="translation" rows="5" placeholder="Translation will appear here..." readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let eventSource;
+        let audioPlayer;
+        let transcriptionTextarea;
+        let translationOutputDiv;
+        let translationTextarea;
+        const recordBtn = document.getElementById('recordBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const playBtn = document.getElementById('playBtn');
+        const targetLanguageSelect = document.getElementById('targetLanguage');
+        const enableTranslationCheckbox = document.getElementById('enableTranslation');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            transcriptionTextarea = document.getElementById('transcription');
+            translationOutputDiv = document.getElementById('translation-output');
+            translationTextarea = document.getElementById('translation');
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function startRecording() {
+            transcriptionTextarea.value = '';
+            if (translationTextarea) {
+                translationTextarea.value = '';
+            }
+            transcriptionTextarea.readOnly = true;
+            if (translationTextarea) {
+                translationTextarea.readOnly = true;
+            }
+            recordBtn.disabled = true;
+            stopBtn.disabled = false;
+            playBtn.disabled = true;
+            audioChunks = [];
+
+            // Enable/disable language selection based on the toggle state at recording start
+            targetLanguageSelect.disabled = !enableTranslationCheckbox.checked;
+
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
+
+                    mediaRecorder.ondataavailable = event => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                            sendAudioChunk(event.data);
+                        }
+                    };
+                    mediaRecorder.start(500);
+
+                    fetch("/start_recording/", { method: "POST" })
+                        .then(response => response.json())
+                        .then(data => console.log("Start Recording Response:", data))
+                        .catch(error => console.error("Error starting recording:", error));
+
+                    eventSource = new EventSource("/stream_transcription/");
+                    console.log("👂 EventSource created for /stream_transcription/");
+                    eventSource.onmessage = function (event) {
+                        console.log("⬇️ Received SSE event:", event);
+                        console.log("   Event data:", event.data);
+                        try {
+                            const result = JSON.parse(event.data);
+                            console.log("   Parsed result:", result);
+                            transcriptionTextarea.value += result.text + " ";
+                            console.log("✍️ Updated transcription textarea:", transcriptionTextarea.value);
+
+                            // Real-time translation trigger
+                            if (enableTranslationCheckbox.checked && targetLanguageSelect.value) {
+                                translateText(result.text);
+                            }
+                        } catch (error) {
+                            console.error("⚠️ Error parsing SSE data:", error, event.data);
+                        }
+                    };
+                    eventSource.onerror = function (error) {
+                        console.error("⚠️ EventSource error:", error);
+                    };
+                })
+                .catch(error => {
+                    console.error("Microphone access error:", error);
+                    alert("Microphone access is blocked! Allow access in your browser settings.");
+                    recordBtn.disabled = false;
+                    stopBtn.disabled = true;
+                });
+        }
+
+        function sendAudioChunk(audioBlob) {
+            const formData = new FormData();
+            formData.append('audio_data', audioBlob, 'audio.webm');
+            fetch('/record_chunk/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            }).then(response => response.json())
+                .then(data => {
+                    console.log("⬆️ Send Chunk Response:", data);
+                    if (data.status !== 'chunk received') {
+                        console.error('Error sending chunk:', data);
+                    }
+                })
+                .catch(error => console.error('Error sending chunk:', error));
+        }
+
+        function stopRecording() {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+
+            fetch("/stop_recording/", { method: "POST" })
+                .then(response => response.json())
+                .then(data => console.log("Stop Recording Response:", data))
+                .catch(error => console.error("Error stopping recording:", error));
+
+            if (eventSource) {
+                console.log("🛑 Closing EventSource.");
+                eventSource.close();
+            }
+            recordBtn.disabled = false;
+            stopBtn.disabled = true;
+            playBtn.disabled = audioChunks.length === 0;
+            transcriptionTextarea.readOnly = false;
+            if (translationTextarea) {
+                translationTextarea.readOnly = false;
+            }
+        }
+
+        function playRecording() {
+            if (audioChunks.length > 0) {
+                const fullBlob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
+                const audioURL = URL.createObjectURL(fullBlob);
+                audioPlayer = new Audio(audioURL);
+                audioPlayer.onended = () => {
+                    URL.revokeObjectURL(audioURL);
+                    audioPlayer = null;
+                };
+                audioPlayer.play();
+            } else {
+                alert("No audio recorded yet.");
+            }
+        }
+
+        function translateText(text) {
+            const targetLang = targetLanguageSelect.value;
+            if (targetLang) {
+                fetch('/translate/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: `text=${encodeURIComponent(text)}&target_language=${encodeURIComponent(targetLang)}`
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.translated_text && translationTextarea) {
+                            translationTextarea.value += data.translated_text + " ";
+                        } else if (data.error && translationTextarea) {
+                            console.error("Translation error:", data.error);
+                            translationTextarea.value += "(Translation Error) ";
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error sending translation request:", error);
+                        if (translationTextarea) {
+                            translationTextarea.value += "(Translation Failed) ";
+                        }
+                    });
+            }
+        }
+
+        function toggleTranslationOutput() {
+            translationOutputDiv.style.display = enableTranslationCheckbox.checked ? 'block' : 'none';
+            targetLanguageSelect.disabled = !enableTranslationCheckbox.checked;
+        }
+    </script>
+
+</body>
+
+</html>
