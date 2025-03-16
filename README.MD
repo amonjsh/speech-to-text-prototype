@@ -23,6 +23,7 @@ List any dependencies that need to be installed before running the project. For 
 - [Docker](https://www.docker.com/)
 - Google Project
     - Generate your own API Keys
+    - Create settings.json file with your key and put at the same dir manage.py
 
 ### Installation
 
@@ -30,7 +31,7 @@ Provide step-by-step instructions on how to install your project.
 
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/](https://github.com/)[Your Username]/[Your Repository Name].git
+   https://github.com/amonjsh/speech-to-text-prototype.git
 
 2. Create a python virtual environment. Activate.
 3. Run pip install -r requirements.txt
