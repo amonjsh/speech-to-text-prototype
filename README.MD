@@ -38,4 +38,7 @@ Provide step-by-step instructions on how to install your project.
 
 ### Sample
 
-Visit https://django-speech-service-262947126187.us-central1.run.app/
+Visit 
+https://django-speech-service-262947126187.us-central1.run.app/
+OR
+https://amonjsh.pythonanywhere.com/
